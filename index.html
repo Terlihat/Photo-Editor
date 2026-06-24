@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Photo Editor | v1.0.0</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* --- CSS Variables for Theming --- */
+        :root[data-theme="dark"] {
+            --bg-main: #121212;
+            --bg-panel: #1e1e1e;
+            --text-main: #ffffff;
+            --text-muted: #a0a0a0;
+            --primary: #bb86fc;
+            --primary-hover: #9965f4;
+            --border: #333333;
+        }
+
+        :root[data-theme="light"] {
+            --bg-main: #f4f5f7;
+            --bg-panel: #ffffff;
+            --text-main: #202124;
+            --text-muted: #5f6368;
+            --primary: #6200ea;
+            --primary-hover: #3700b3;
+            --border: #dadce0;
+        }
+
+        /* --- Global Styles --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Header --- */
+        header {
+            background-color: var(--bg-panel);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .version {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background-color: var(--bg-main);
+            padding: 3px 8px;
+            border-radius: 12px;
+            margin-left: 10px;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--bg-main);
+        }
+
+        /* --- Main Layout --- */
+        .container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* --- Sidebar --- */
+        .sidebar {
+            width: 300px;
+            background-color: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .tool-group h3 {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .slider-container {
+            margin-bottom: 15px;
+        }
+
+        .slider-container label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .btn:hover {
+            background-color: var(--border);
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: #ffffff;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        /* --- Canvas Area --- */
+        .editor-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background-color: var(--bg-main);
+            position: relative;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: calc(100vh - 150px);
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            display: none; /* Hidden until image is uploaded */
+        }
+
+        .upload-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .upload-placeholder i {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--primary);"></i>
+            M-Editor
+            <span class="version">v1.0.0</span>
+        </div>
+        <button class="theme-toggle" id="themeBtn" title="Toggle Light/Dark Mode">
+            <i class="fa-solid fa-sun"></i>
+        </button>
+    </header>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="tool-group">
+                <h3>Penyesuaian</h3>
+                
+                <div class="slider-container">
+                    <label><span>Kecerahan</span> <span id="bright-val">100%</span></label>
+                    <input type="range" id="brightness" min="0" max="200" value="100">
+                </div>
+                
+                <div class="slider-container">
+                    <label><span>Kontras</span> <span id="contrast-val">100%</span></label>
+                    <input type="range" id="contrast" min="0" max="200" value="100">
+                </div>
+                
+                <div class="slider-container">
+                    <label><span>Saturasi</span> <span id="saturate-val">100%</span></label>
+                    <input type="range" id="saturate" min="0" max="200" value="100">
+                </div>
+            </div>
+
+            <div class="tool-group">
+                <h3>Filter</h3>
+                <div class="btn-group">
+                    <button class="btn" id="grayscaleBtn"><i class="fa-solid fa-droplet-slash"></i> B&W</button>
+                    <button class="btn" id="invertBtn"><i class="fa-solid fa-yin-yang"></i> Invert</button>
+                </div>
+            </div>
+
+            <div style="flex: 1;"></div> <div class="tool-group">
+                <button class="btn" id="resetBtn" style="margin-bottom: 10px; width: 100%;">
+                    <i class="fa-solid fa-rotate-left"></i> Reset Perubahan
+                </button>
+                <button class="btn btn-primary" id="downloadBtn" style="width: 100%;">
+                    <i class="fa-solid fa-download"></i> Simpan Gambar
+                </button>
+            </div>
+        </aside>
+
+        <main class="editor-area">
+            <div class="upload-placeholder" id="uploadPlaceholder">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <h2>Belum ada gambar</h2>
+                <p style="margin: 10px 0 20px;">Unggah gambar untuk mulai mengedit</p>
+                <label for="uploadInput" class="btn btn-primary" style="display: inline-block; cursor: pointer;">
+                    Pilih Gambar
+                </label>
+                <input type="file" id="uploadInput" accept="image/png, image/jpeg, image/webp">
+            </div>
+
+            <canvas id="canvas"></canvas>
+        </main>
+    </div>
+
+    <script>
+        // --- Version Control Comment ---
+        // Version: 1.0.0
+        // Updates: Initial release, Canvas setup, Basic filters, Dark/Light mode.
+
+        // --- DOM Elements ---
+        const themeBtn = document.getElementById('themeBtn');
+        const uploadInput = document.getElementById('uploadInput');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+        
+        // Sliders & Values
+        const brightnessSlider = document.getElementById('brightness');
+        const contrastSlider = document.getElementById('contrast');
+        const saturateSlider = document.getElementById('saturate');
+        const brightVal = document.getElementById('bright-val');
+        const contrastVal = document.getElementById('contrast-val');
+        const saturateVal = document.getElementById('saturate-val');
+
+        // Buttons
+        const grayscaleBtn = document.getElementById('grayscaleBtn');
+        const invertBtn = document.getElementById('invertBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        // State variables
+        let img = new Image();
+        let currentFilters = {
+            brightness: 100,
+            contrast: 100,
+            saturate: 100,
+            grayscale: 0,
+            invert: 0
+        };
+
+        // --- Theme Toggle Logic ---
+        themeBtn.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            
+            // Toggle Icon
+            themeBtn.innerHTML = newTheme === 'dark' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+        });
+
+        // --- Image Upload Logic ---
+        uploadInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        img.onload = () => {
+            // Hide placeholder, show canvas
+            uploadPlaceholder.style.display = 'none';
+            canvas.style.display = 'block';
+
+            // Set canvas dimensions to match image
+            canvas.width = img.width;
+            canvas.height = img.height;
+            
+            resetFilters();
+            applyFilters();
+        };
+
+        // --- Filter Application Logic ---
+        function applyFilters() {
+            if (!img.src) return;
+
+            // Generate CSS filter string
+            ctx.filter = `
+                brightness(${currentFilters.brightness}%) 
+                contrast(${currentFilters.contrast}%) 
+                saturate(${currentFilters.saturate}%) 
+                grayscale(${currentFilters.grayscale}%) 
+                invert(${currentFilters.invert}%)
+            `;
+            
+            // Redraw image with new filters
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        }
+
+        // --- Slider Event Listeners ---
+        brightnessSlider.addEventListener('input', (e) => {
+            currentFilters.brightness = e.target.value;
+            brightVal.innerText = `${e.target.value}%`;
+            applyFilters();
+        });
+
+        contrastSlider.addEventListener('input', (e) => {
+            currentFilters.contrast = e.target.value;
+            contrastVal.innerText = `${e.target.value}%`;
+            applyFilters();
+        });
+
+        saturateSlider.addEventListener('input', (e) => {
+            currentFilters.saturate = e.target.value;
+            saturateVal.innerText = `${e.target.value}%`;
+            applyFilters();
+        });
+
+        // --- Button Event Listeners ---
+        grayscaleBtn.addEventListener('click', () => {
+            currentFilters.grayscale = currentFilters.grayscale === 0 ? 100 : 0;
+            applyFilters();
+        });
+
+        invertBtn.addEventListener('click', () => {
+            currentFilters.invert = currentFilters.invert === 0 ? 100 : 0;
+            applyFilters();
+        });
+
+        // --- Reset Logic ---
+        function resetFilters() {
+            currentFilters = { brightness: 100, contrast: 100, saturate: 100, grayscale: 0, invert: 0 };
+            
+            brightnessSlider.value = 100;
+            contrastSlider.value = 100;
+            saturateSlider.value = 100;
+            
+            brightVal.innerText = '100%';
+            contrastVal.innerText = '100%';
+            saturateVal.innerText = '100%';
+
+            applyFilters();
+        }
+
+        resetBtn.addEventListener('click', resetFilters);
+
+        // --- Download Logic ---
+        downloadBtn.addEventListener('click', () => {
+            if (!img.src) {
+                alert("Silakan unggah gambar terlebih dahulu!");
+                return;
+            }
+            const link = document.createElement('a');
+            link.download = `edited-image-${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+    </script>
+</body>
+</html>
