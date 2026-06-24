@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modern Photo Editor | v1.7.0 Pro</title>
+    <title>Modern Photo Editor | v1.7.2 Stable</title>
     <link rel="icon" href="favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -27,7 +27,7 @@
         /* --- Header --- */
         header { background-color: var(--bg-panel); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .logo { font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; gap: 10px; letter-spacing: 0.5px; }
-        .version { font-size: 0.75rem; color: #fff; background: linear-gradient(45deg, var(--primary), #ff79c6); padding: 4px 10px; border-radius: 20px; margin-left: 10px; font-weight: 600; }
+        .version { font-size: 0.75rem; color: #fff; background: linear-gradient(45deg, var(--primary), #20b2aa); padding: 4px 10px; border-radius: 20px; margin-left: 10px; font-weight: 600; }
         
         .header-actions { display: flex; align-items: center; gap: 12px; }
         .theme-toggle, .icon-btn { background: var(--bg-main); border: none; color: var(--text-main); font-size: 1.1rem; cursor: pointer; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); }
@@ -67,18 +67,22 @@
         .btn-danger:hover { background-color: #cf6679; color: #fff; }
 
         /* --- Canvas Area --- */
-        .editor-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; background-color: var(--bg-main); position: relative; overflow: auto; }
+        .editor-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; background-color: var(--bg-main); overflow: auto; }
         .editor-area.drawing-mode { cursor: crosshair; }
-        .canvas-container { display: flex; align-items: center; justify-content: center; position: relative; transition: transform 0.3s ease; }
-        canvas { max-width: 100%; max-height: calc(100vh - 120px); object-fit: contain; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); display: none; background-image: repeating-conic-gradient(var(--border) 0% 25%, transparent 0% 50%); background-size: 20px 20px; }
-        #drawOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        
+        .canvas-container { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; overflow: hidden; }
+        .canvas-wrapper { position: relative; max-width: 100%; max-height: calc(100vh - 120px); display: inline-flex; justify-content: center; align-items: center; touch-action: none; /* Mencegah pull-to-refresh di HP */ }
+        
+        #canvas { max-width: 100%; max-height: calc(100vh - 120px); object-fit: contain; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); display: none; background-image: repeating-conic-gradient(var(--border) 0% 25%, transparent 0% 50%); background-size: 20px 20px; }
+        #drawOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; border-radius: 8px; touch-action: none; }
+        
         .drawing-mode #drawOverlay { pointer-events: auto; }
 
         .upload-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); text-align: center; border: 2px dashed var(--border); padding: 50px; border-radius: 15px; width: 80%; max-width: 500px; background-color: var(--bg-panel); }
         .upload-placeholder i { font-size: 5rem; margin-bottom: 20px; color: var(--primary); opacity: 0.8; }
         input[type="file"] { display: none; }
 
-        /* --- NEW: Modal Styles --- */
+        /* --- Modal Styles --- */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--modal-bg); backdrop-filter: blur(5px); z-index: 100; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
         .modal-overlay.active { display: flex; opacity: 1; }
         .modal-box { background-color: var(--bg-panel); width: 400px; border-radius: 12px; padding: 25px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); transform: translateY(20px); transition: transform 0.3s; border: 1px solid var(--border); }
@@ -95,7 +99,7 @@
         <div class="logo">
             <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--primary);"></i>
             M-Editor
-            <span class="version">PRO v1.7.0</span>
+            <span class="version">v1.7.2</span>
         </div>
         <div class="header-actions">
             <button class="icon-btn" id="undoBtn" disabled title="Batal (Ctrl+Z)"><i class="fa-solid fa-rotate-left"></i></button>
@@ -107,6 +111,7 @@
 
     <div class="container">
         <aside class="sidebar">
+            <button class="btn btn-primary" id="changeImgBtn" style="display: none; margin-bottom: -10px; width: 100%;"><i class="fa-solid fa-folder-open"></i> Ganti Gambar Baru</button>
 
             <div class="tool-group">
                 <h3>Filter Instan</h3>
@@ -120,43 +125,22 @@
 
             <div class="tool-group">
                 <h3>Filter Warna</h3>
-                <div class="slider-container">
-                    <label><span>Kecerahan</span> <span id="bright-val">100%</span></label>
-                    <input type="range" id="brightness" min="0" max="200" value="100">
-                </div>
-                <div class="slider-container">
-                    <label><span>Kontras</span> <span id="contrast-val">100%</span></label>
-                    <input type="range" id="contrast" min="0" max="200" value="100">
-                </div>
-                <div class="slider-container">
-                    <label><span>Saturasi</span> <span id="saturate-val">100%</span></label>
-                    <input type="range" id="saturate" min="0" max="200" value="100">
-                </div>
-                <div class="slider-container">
-                    <label><span>Blur</span> <span id="blur-val">0px</span></label>
-                    <input type="range" id="blur" min="0" max="20" value="0" step="0.5">
-                </div>
+                <div class="slider-container"><label><span>Kecerahan</span> <span id="bright-val">100%</span></label><input type="range" id="brightness" min="0" max="200" value="100"></div>
+                <div class="slider-container"><label><span>Kontras</span> <span id="contrast-val">100%</span></label><input type="range" id="contrast" min="0" max="200" value="100"></div>
+                <div class="slider-container"><label><span>Saturasi</span> <span id="saturate-val">100%</span></label><input type="range" id="saturate" min="0" max="200" value="100"></div>
+                <div class="slider-container"><label><span>Blur</span> <span id="blur-val">0px</span></label><input type="range" id="blur" min="0" max="20" value="0" step="0.5"></div>
             </div>
 
             <div class="tool-group">
                 <h3>Efek Spesial</h3>
-                <div class="slider-container">
-                    <label><span>Vignette (Tepi Gelap)</span> <span id="vignette-val">0%</span></label>
-                    <input type="range" id="vignette" min="0" max="100" value="0">
-                </div>
-                <div class="slider-container">
-                    <label><span>Noise (Film Grain)</span> <span id="noise-val">0%</span></label>
-                    <input type="range" id="noise" min="0" max="100" value="0">
-                </div>
+                <div class="slider-container"><label><span>Vignette (Tepi Gelap)</span> <span id="vignette-val">0%</span></label><input type="range" id="vignette" min="0" max="100" value="0"></div>
+                <div class="slider-container"><label><span>Noise (Film Grain)</span> <span id="noise-val">0%</span></label><input type="range" id="noise" min="0" max="100" value="0"></div>
             </div>
             
             <div class="tool-group">
                 <h3>Stiker / Logo</h3>
-                <label for="stickerInput" class="btn" style="width: 100%; cursor: pointer;">
-                    <i class="fa-solid fa-image"></i> Pilih Stiker
-                </label>
+                <label for="stickerInput" class="btn" style="width: 100%; cursor: pointer;"><i class="fa-solid fa-image"></i> Pilih Stiker</label>
                 <input type="file" id="stickerInput" accept="image/png, image/jpeg, image/webp">
-                
                 <div id="stickerControls" style="display: none; margin-top: 10px;">
                     <div class="slider-container"><label><span>Ukuran</span> <span id="st-size-val">20%</span></label><input type="range" id="stickerSize" min="5" max="100" value="20"></div>
                     <div class="slider-container"><label><span>Posisi X</span> <span id="st-x-val">50%</span></label><input type="range" id="stickerX" min="0" max="100" value="50"></div>
@@ -173,7 +157,6 @@
                     <button class="btn" id="crop43">4:3</button>
                     <button class="btn" id="crop169">16:9</button>
                 </div>
-                
                 <button class="btn" id="toggleDrawBtn" style="width: 100%; margin-top: 5px;"><i class="fa-solid fa-paintbrush"></i> Mulai Coretan</button>
                 <div class="input-group" id="brushControls" style="display: none; margin-top: 5px;">
                     <div style="flex: 2;"><input type="range" id="brushSize" min="1" max="50" value="5"></div>
@@ -219,9 +202,12 @@
             </div>
 
             <div class="canvas-container">
-                <canvas id="canvas"></canvas>
-                <canvas id="drawOverlay"></canvas>
+                <div class="canvas-wrapper">
+                    <canvas id="canvas"></canvas>
+                    <canvas id="drawOverlay"></canvas>
+                </div>
             </div>
+            
             <input type="hidden" id="resizeWidth">
             <input type="hidden" id="resizeHeight">
         </main>
@@ -233,7 +219,6 @@
                 <h2><i class="fa-solid fa-sliders"></i> Pengaturan Ekspor</h2>
                 <button class="close-modal" id="closeExportBtn"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            
             <div class="input-group" style="margin-bottom: 15px;">
                 <div style="flex: 1;">
                     <label>Format Gambar</label>
@@ -244,13 +229,11 @@
                     </select>
                 </div>
             </div>
-            
             <div class="slider-container" id="qualityContainer">
                 <label><span>Kualitas Gambar</span> <span id="quality-val">90%</span></label>
                 <input type="range" id="exportQuality" min="10" max="100" value="90">
                 <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 5px;">*Kualitas rendah akan memperkecil ukuran file.</small>
             </div>
-
             <div class="input-group" style="margin-top: 25px;">
                 <button class="btn" id="cancelExportBtn" style="flex: 1;">Batal</button>
                 <button class="btn btn-primary" id="confirmExportBtn" style="flex: 1;"><i class="fa-solid fa-check"></i> Unduh Sekarang</button>
@@ -259,10 +242,9 @@
     </div>
 
     <script>
-        // Version 1.7.0: Pro UI/UX, Advanced Export, Keyboard Shortcuts
-
         const themeBtn = document.getElementById('themeBtn');
         const uploadInput = document.getElementById('uploadInput');
+        const changeImgBtn = document.getElementById('changeImgBtn'); // Perbaikan UX
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const drawOverlay = document.getElementById('drawOverlay');
@@ -290,14 +272,12 @@
         const watermarkText = document.getElementById('watermarkText'), watermarkColor = document.getElementById('watermarkColor');
         const resizeW = document.getElementById('resizeWidth'), resizeH = document.getElementById('resizeHeight');
 
-        // Theme Toggle
         themeBtn.addEventListener('click', () => {
             const current = document.documentElement.getAttribute('data-theme');
             document.documentElement.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
             themeBtn.innerHTML = current === 'dark' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
         });
 
-        // Noise Pattern
         const getNoisePattern = () => {
             const noiseCanvas = document.createElement('canvas'); noiseCanvas.width = 150; noiseCanvas.height = 150;
             const nCtx = noiseCanvas.getContext('2d'); const imgData = nCtx.createImageData(150, 150); const data = imgData.data;
@@ -306,7 +286,6 @@
         };
         const noisePattern = getNoisePattern();
 
-        // History
         function saveState() {
             if (historyIndex < editHistory.length - 1) editHistory = editHistory.slice(0, historyIndex + 1);
             editHistory.push({ src: img.src, filters: { ...currentFilters }, decor: { frame: frameSize.value, wText: watermarkText.value }, sticker: { ...stickerSettings, stickerSrc: stickerSettings.hasSticker ? stickerImg.src : null } });
@@ -314,6 +293,7 @@
             updateHistoryButtons();
         }
         function updateHistoryButtons() { undoBtn.disabled = historyIndex <= 0; redoBtn.disabled = historyIndex >= editHistory.length - 1; }
+        
         function restoreState(index) {
             const state = editHistory[index]; currentFilters = { ...state.filters };
             frameSize.value = state.decor.frame; watermarkText.value = state.decor.wText; stickerSettings = { ...state.sticker };
@@ -336,19 +316,41 @@
             if (img.src !== state.src) { isInternalUpdate = true; img.src = state.src; } else applyFilters();
             updateHistoryButtons();
         }
+        
         undoBtn.addEventListener('click', () => { if (historyIndex > 0) { historyIndex--; restoreState(historyIndex); } });
         redoBtn.addEventListener('click', () => { if (historyIndex < editHistory.length - 1) { historyIndex++; restoreState(historyIndex); } });
 
-        // Inputs
         uploadInput.addEventListener('change', (e) => {
             const file = e.target.files[0]; if (!file) return;
             const reader = new FileReader(); reader.onload = (event) => { editHistory = []; historyIndex = -1; img.src = event.target.result; }; reader.readAsDataURL(file);
         });
+
+        // Event listener untuk tombol ganti gambar baru
+        changeImgBtn.addEventListener('click', () => { uploadInput.click(); });
+
         img.onload = () => {
             if (!isInternalUpdate) {
-                uploadPlaceholder.style.display = 'none'; canvas.style.display = 'block'; drawOverlay.style.display = 'block';
-                resizeW.value = img.width; resizeH.value = img.height; resetFilters(true, false); saveState();
-            } else { isInternalUpdate = false; resizeW.value = img.width; resizeH.value = img.height; applyFilters(); }
+                // Skala otomatis gambar untuk mencegah memori penuh
+                const MAX_SAFE_RES = 2048; 
+                let scale = 1;
+                if (img.width > MAX_SAFE_RES || img.height > MAX_SAFE_RES) {
+                    scale = Math.min(MAX_SAFE_RES / img.width, MAX_SAFE_RES / img.height);
+                }
+                resizeW.value = Math.floor(img.width * scale);
+                resizeH.value = Math.floor(img.height * scale);
+
+                uploadPlaceholder.style.display = 'none'; 
+                changeImgBtn.style.display = 'flex'; // Menampilkan tombol ganti gambar
+                canvas.style.display = 'block'; 
+                drawOverlay.style.display = 'block';
+                
+                resetFilters(true, false); saveState();
+            } else { 
+                isInternalUpdate = false; 
+                resizeW.value = img.width; 
+                resizeH.value = img.height; 
+                applyFilters(); 
+            }
         };
 
         stickerInput.addEventListener('change', (e) => {
@@ -358,12 +360,12 @@
         stickerImg.onload = () => { stickerSettings.hasSticker = true; stickerControls.style.display = 'block'; applyFilters(); saveState(); };
         document.getElementById('removeStickerBtn').addEventListener('click', () => { stickerSettings.hasSticker = false; stickerControls.style.display = 'none'; stickerInput.value = ''; applyFilters(); saveState(); });
 
-        // Core Render Engine
         function applyFilters() {
             if (!img.src) return;
             let baseW = parseInt(resizeW.value) || img.width, baseH = parseInt(resizeH.value) || img.height;
             const rotation = currentFilters.rotate % 360, isVertical = rotation === 90 || rotation === 270 || rotation === -90 || rotation === -270;
-            canvas.width = isVertical ? baseH : baseW; canvas.height = isVertical ? baseW : baseH; drawOverlay.width = canvas.width; drawOverlay.height = canvas.height;
+            canvas.width = isVertical ? baseH : baseW; canvas.height = isVertical ? baseW : baseH; 
+            drawOverlay.width = canvas.width; drawOverlay.height = canvas.height;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.save();
             ctx.translate(canvas.width / 2, canvas.height / 2); if (rotation !== 0) ctx.rotate(rotation * Math.PI / 180); ctx.scale(currentFilters.flipH, currentFilters.flipV);
@@ -424,16 +426,26 @@
             });
         });
 
-        // Smart Crop & Draw
+        // BUG FIX 3: Reset Filter sebelum Smart Crop
         function applySmartCrop(targetRatio) {
             if (!img.src) return;
+            
+            // Simpan rotasi sementara dan kembalikan ke 0
+            const currentRot = currentFilters.rotate;
+            currentFilters.rotate = 0;
+            applyFilters();
+
             const tempImg = new Image();
             tempImg.onload = () => {
                 const tempCanvas = document.createElement('canvas'); const tCtx = tempCanvas.getContext('2d');
                 let sW = tempImg.width, sH = tempImg.height, cW = sW, cH = sH, dX = 0, dY = 0;
                 if (sW / sH > targetRatio) { cW = sH * targetRatio; dX = (sW - cW) / 2; } else { cH = sW / targetRatio; dY = (sH - cH) / 2; }
                 tempCanvas.width = cW; tempCanvas.height = cH; tCtx.drawImage(tempImg, dX, dY, cW, cH, 0, 0, cW, cH);
-                resetFilters(false, false); isInternalUpdate = true; img.src = tempCanvas.toDataURL('image/png'); setTimeout(saveState, 50);
+                
+                resetFilters(false, false); 
+                isInternalUpdate = true; 
+                img.src = tempCanvas.toDataURL('image/png'); 
+                setTimeout(saveState, 50);
             };
             tempImg.src = canvas.toDataURL('image/png');
         }
@@ -454,6 +466,7 @@
             }
         });
 
+        // Event Mouse
         const getMousePos = (e) => { const rect = drawOverlay.getBoundingClientRect(), scaleX = drawOverlay.width / rect.width, scaleY = drawOverlay.height / rect.height; return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY }; };
         drawOverlay.addEventListener('mousedown', (e) => { if (!isDrawingMode) return; isDrawing = true; const pos = getMousePos(e); lastX = pos.x; lastY = pos.y; });
         drawOverlay.addEventListener('mousemove', (e) => {
@@ -462,6 +475,33 @@
             drawCtx.moveTo(lastX, lastY); drawCtx.lineTo(pos.x, pos.y); drawCtx.stroke(); lastX = pos.x; lastY = pos.y;
         });
         drawOverlay.addEventListener('mouseup', () => isDrawing = false); drawOverlay.addEventListener('mouseout', () => isDrawing = false);
+
+        // BUG FIX 1: Event Touch (Mobile Friendly)
+        const getTouchPos = (e) => { 
+            const rect = drawOverlay.getBoundingClientRect();
+            const touch = e.touches[0];
+            const scaleX = drawOverlay.width / rect.width; 
+            const scaleY = drawOverlay.height / rect.height; 
+            return { x: (touch.clientX - rect.left) * scaleX, y: (touch.clientY - rect.top) * scaleY }; 
+        };
+        drawOverlay.addEventListener('touchstart', (e) => { 
+            if (!isDrawingMode) return; 
+            e.preventDefault(); 
+            isDrawing = true; 
+            const pos = getTouchPos(e); 
+            lastX = pos.x; lastY = pos.y; 
+        }, { passive: false });
+        drawOverlay.addEventListener('touchmove', (e) => {
+            if (!isDrawing || !isDrawingMode) return; 
+            e.preventDefault();
+            const pos = getTouchPos(e);
+            drawCtx.beginPath(); drawCtx.lineCap = 'round'; drawCtx.lineJoin = 'round'; 
+            drawCtx.lineWidth = document.getElementById('brushSize').value; 
+            drawCtx.strokeStyle = document.getElementById('brushColor').value;
+            drawCtx.moveTo(lastX, lastY); drawCtx.lineTo(pos.x, pos.y); drawCtx.stroke(); 
+            lastX = pos.x; lastY = pos.y;
+        }, { passive: false });
+        drawOverlay.addEventListener('touchend', () => isDrawing = false);
 
         function resetFilters(fullReset = true, doSave = true) {
             currentFilters = { brightness: 100, contrast: 100, saturate: 100, blur: 0, vignette: 0, noise: 0, rotate: 0, flipH: 1, flipV: 1 };
@@ -472,44 +512,16 @@
         }
         document.getElementById('resetBtn').addEventListener('click', () => resetFilters(true, true));
 
-        // NEW: Advanced Export Logic
-        const exportModal = document.getElementById('exportModal');
-        const exportFormat = document.getElementById('exportFormat');
-        const exportQuality = document.getElementById('exportQuality');
-        const qualityContainer = document.getElementById('qualityContainer');
-        const qualityVal = document.getElementById('quality-val');
-
-        document.getElementById('openExportBtn').addEventListener('click', () => {
-            if (!img.src) return alert("Silakan unggah gambar terlebih dahulu!");
-            if (isDrawingMode) toggleDrawBtn.click();
-            exportModal.classList.add('active');
-        });
-
-        document.getElementById('closeExportBtn').addEventListener('click', () => exportModal.classList.remove('active'));
-        document.getElementById('cancelExportBtn').addEventListener('click', () => exportModal.classList.remove('active'));
-
-        exportFormat.addEventListener('change', (e) => {
-            // Hide quality slider for PNG as it's lossless
-            qualityContainer.style.display = e.target.value === 'image/png' ? 'none' : 'block';
-        });
-
-        exportQuality.addEventListener('input', (e) => {
-            qualityVal.innerText = `${e.target.value}%`;
-        });
-
+        const exportModal = document.getElementById('exportModal'), exportFormat = document.getElementById('exportFormat'), exportQuality = document.getElementById('exportQuality'), qualityContainer = document.getElementById('qualityContainer');
+        document.getElementById('openExportBtn').addEventListener('click', () => { if (!img.src) return alert("Silakan unggah gambar terlebih dahulu!"); if (isDrawingMode) toggleDrawBtn.click(); exportModal.classList.add('active'); });
+        document.getElementById('closeExportBtn').addEventListener('click', () => exportModal.classList.remove('active')); document.getElementById('cancelExportBtn').addEventListener('click', () => exportModal.classList.remove('active'));
+        exportFormat.addEventListener('change', (e) => { qualityContainer.style.display = e.target.value === 'image/png' ? 'none' : 'block'; });
+        exportQuality.addEventListener('input', (e) => { document.getElementById('quality-val').innerText = `${e.target.value}%`; });
         document.getElementById('confirmExportBtn').addEventListener('click', () => {
-            const format = exportFormat.value;
-            const quality = parseInt(exportQuality.value) / 100;
-            const ext = format.split('/')[1];
-            
-            const link = document.createElement('a'); 
-            link.download = `meditor-pro-${Date.now()}.${ext}`; 
-            link.href = canvas.toDataURL(format, quality); 
-            link.click();
-            exportModal.classList.remove('active');
+            const format = exportFormat.value, quality = parseInt(exportQuality.value) / 100, ext = format.split('/')[1];
+            const link = document.createElement('a'); link.download = `meditor-pro-${Date.now()}.${ext}`; link.href = canvas.toDataURL(format, quality); link.click(); exportModal.classList.remove('active');
         });
 
-        // NEW: Keyboard Shortcuts
         document.addEventListener('keydown', (e) => {
             if (e.ctrlKey && e.key === 'z') { e.preventDefault(); if(!undoBtn.disabled) undoBtn.click(); }
             if (e.ctrlKey && e.key === 'y') { e.preventDefault(); if(!redoBtn.disabled) redoBtn.click(); }
