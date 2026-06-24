@@ -3,208 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modern Photo Editor | v1.0.0</title>
+    <title>Modern Photo Editor | v1.7.0 Pro</title>
     <link rel="icon" href="favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        /* --- CSS Variables for Theming --- */
+        /* --- CSS Variables --- */
         :root[data-theme="dark"] {
-            --bg-main: #121212;
-            --bg-panel: #1e1e1e;
-            --text-main: #ffffff;
-            --text-muted: #a0a0a0;
-            --primary: #bb86fc;
-            --primary-hover: #9965f4;
-            --border: #333333;
+            --bg-main: #121212; --bg-panel: #1e1e1e; --text-main: #ffffff;
+            --text-muted: #a0a0a0; --primary: #bb86fc; --primary-hover: #9965f4;
+            --border: #333333; --input-bg: #2a2a2a; --modal-bg: rgba(0, 0, 0, 0.7);
         }
-
         :root[data-theme="light"] {
-            --bg-main: #f4f5f7;
-            --bg-panel: #ffffff;
-            --text-main: #202124;
-            --text-muted: #5f6368;
-            --primary: #6200ea;
-            --primary-hover: #3700b3;
-            --border: #dadce0;
+            --bg-main: #f4f5f7; --bg-panel: #ffffff; --text-main: #202124;
+            --text-muted: #5f6368; --primary: #6200ea; --primary-hover: #3700b3;
+            --border: #dadce0; --input-bg: #f1f3f4; --modal-bg: rgba(0, 0, 0, 0.5);
         }
 
         /* --- Global Styles --- */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            transition: background-color 0.3s, color 0.3s;
-        }
-
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; transition: background-color 0.3s, color 0.3s, border-color 0.2s; }
+        body { background-color: var(--bg-main); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
         /* --- Header --- */
-        header {
-            background-color: var(--bg-panel);
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
+        header { background-color: var(--bg-panel); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .logo { font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; gap: 10px; letter-spacing: 0.5px; }
+        .version { font-size: 0.75rem; color: #fff; background: linear-gradient(45deg, var(--primary), #ff79c6); padding: 4px 10px; border-radius: 20px; margin-left: 10px; font-weight: 600; }
+        
+        .header-actions { display: flex; align-items: center; gap: 12px; }
+        .theme-toggle, .icon-btn { background: var(--bg-main); border: none; color: var(--text-main); font-size: 1.1rem; cursor: pointer; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); }
+        .theme-toggle:hover, .icon-btn:hover:not(:disabled) { background-color: var(--border); transform: translateY(-1px); }
+        .icon-btn:disabled { color: var(--text-muted); cursor: not-allowed; opacity: 0.5; }
 
-        .logo {
-            font-size: 1.5rem;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        /* --- Layout & Sidebar --- */
+        .container { display: flex; flex: 1; overflow: hidden; }
+        .sidebar { width: 340px; background-color: var(--bg-panel); border-right: 1px solid var(--border); padding: 25px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 25px; }
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-thumb { background-color: var(--border); border-radius: 10px; }
+        
+        .tool-group { display: flex; flex-direction: column; gap: 10px; }
+        .tool-group h3 { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.2px; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 5px; }
 
-        .version {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            background-color: var(--bg-main);
-            padding: 3px 8px;
-            border-radius: 12px;
-            margin-left: 10px;
-        }
+        /* --- Controls --- */
+        .slider-container label { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 8px; font-weight: 500; }
+        input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--primary); height: 6px; background: var(--input-bg); border-radius: 5px; outline: none; -webkit-appearance: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--primary); cursor: pointer; }
+        
+        .input-group { display: flex; gap: 10px; align-items: center; }
+        .input-group > div { flex: 1; }
+        .input-group label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px; }
+        input[type="number"], input[type="text"], select { width: 100%; padding: 10px; background-color: var(--input-bg); color: var(--text-main); border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; outline: none; }
+        input[type="number"]:focus, input[type="text"]:focus, select:focus { border-color: var(--primary); }
+        input[type="color"] { width: 100%; height: 40px; padding: 0; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; background: none; }
 
-        .theme-toggle {
-            background: none;
-            border: none;
-            color: var(--text-main);
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 50%;
-        }
-
-        .theme-toggle:hover {
-            background-color: var(--bg-main);
-        }
-
-        /* --- Main Layout --- */
-        .container {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
-
-        /* --- Sidebar --- */
-        .sidebar {
-            width: 300px;
-            background-color: var(--bg-panel);
-            border-right: 1px solid var(--border);
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .tool-group h3 {
-            font-size: 1rem;
-            margin-bottom: 10px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .slider-container {
-            margin-bottom: 15px;
-        }
-
-        .slider-container label {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.9rem;
-            margin-bottom: 5px;
-        }
-
-        input[type="range"] {
-            width: 100%;
-            cursor: pointer;
-            accent-color: var(--primary);
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 6px;
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            cursor: pointer;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            border: 1px solid var(--border);
-        }
-
-        .btn:hover {
-            background-color: var(--border);
-        }
-
-        .btn-primary {
-            background-color: var(--primary);
-            color: #ffffff;
-            border: none;
-        }
-
-        .btn-primary:hover {
-            background-color: var(--primary-hover);
-        }
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        .btn { padding: 12px; border: none; border-radius: 8px; background-color: var(--input-bg); color: var(--text-main); cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--border); font-size: 0.85rem; transition: all 0.2s; }
+        .btn:hover { background-color: var(--border); }
+        .btn:active { transform: scale(0.97); }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); color: #ffffff; border: none; }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(187, 134, 252, 0.3); }
+        .btn.active { border-color: var(--primary); color: var(--primary); background-color: rgba(187, 134, 252, 0.1); }
+        .btn-danger { background-color: rgba(207, 102, 121, 0.1); color: #cf6679; border-color: rgba(207, 102, 121, 0.3); }
+        .btn-danger:hover { background-color: #cf6679; color: #fff; }
 
         /* --- Canvas Area --- */
-        .editor-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            background-color: var(--bg-main);
-            position: relative;
-        }
+        .editor-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; background-color: var(--bg-main); position: relative; overflow: auto; }
+        .editor-area.drawing-mode { cursor: crosshair; }
+        .canvas-container { display: flex; align-items: center; justify-content: center; position: relative; transition: transform 0.3s ease; }
+        canvas { max-width: 100%; max-height: calc(100vh - 120px); object-fit: contain; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); display: none; background-image: repeating-conic-gradient(var(--border) 0% 25%, transparent 0% 50%); background-size: 20px 20px; }
+        #drawOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .drawing-mode #drawOverlay { pointer-events: auto; }
 
-        canvas {
-            max-width: 100%;
-            max-height: calc(100vh - 150px);
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            display: none; /* Hidden until image is uploaded */
-        }
+        .upload-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); text-align: center; border: 2px dashed var(--border); padding: 50px; border-radius: 15px; width: 80%; max-width: 500px; background-color: var(--bg-panel); }
+        .upload-placeholder i { font-size: 5rem; margin-bottom: 20px; color: var(--primary); opacity: 0.8; }
+        input[type="file"] { display: none; }
 
-        .upload-placeholder {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-muted);
-            text-align: center;
-        }
-
-        .upload-placeholder i {
-            font-size: 4rem;
-            margin-bottom: 15px;
-            color: var(--primary);
-        }
-
-        input[type="file"] {
-            display: none;
-        }
+        /* --- NEW: Modal Styles --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--modal-bg); backdrop-filter: blur(5px); z-index: 100; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal-box { background-color: var(--bg-panel); width: 400px; border-radius: 12px; padding: 25px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); transform: translateY(20px); transition: transform 0.3s; border: 1px solid var(--border); }
+        .modal-overlay.active .modal-box { transform: translateY(0); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h2 { font-size: 1.2rem; }
+        .close-modal { background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; }
+        .close-modal:hover { color: var(--text-main); }
     </style>
 </head>
 <body>
@@ -213,213 +95,425 @@
         <div class="logo">
             <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--primary);"></i>
             M-Editor
-            <span class="version">v1.0.0</span>
+            <span class="version">PRO v1.7.0</span>
         </div>
-        <button class="theme-toggle" id="themeBtn" title="Toggle Light/Dark Mode">
-            <i class="fa-solid fa-sun"></i>
-        </button>
+        <div class="header-actions">
+            <button class="icon-btn" id="undoBtn" disabled title="Batal (Ctrl+Z)"><i class="fa-solid fa-rotate-left"></i></button>
+            <button class="icon-btn" id="redoBtn" disabled title="Ulangi (Ctrl+Y)"><i class="fa-solid fa-rotate-right"></i></button>
+            <span style="color: var(--border);">|</span>
+            <button class="theme-toggle" id="themeBtn" title="Ganti Tema"><i class="fa-solid fa-sun"></i></button>
+        </div>
     </header>
 
     <div class="container">
         <aside class="sidebar">
+
             <div class="tool-group">
-                <h3>Penyesuaian</h3>
-                
+                <h3>Filter Instan</h3>
+                <div class="btn-grid">
+                    <button class="btn preset-btn" data-preset="normal">Normal</button>
+                    <button class="btn preset-btn" data-preset="vintage">Vintage</button>
+                    <button class="btn preset-btn" data-preset="cinematic">Cinematic</button>
+                    <button class="btn preset-btn" data-preset="bw">B & W</button>
+                </div>
+            </div>
+
+            <div class="tool-group">
+                <h3>Filter Warna</h3>
                 <div class="slider-container">
                     <label><span>Kecerahan</span> <span id="bright-val">100%</span></label>
                     <input type="range" id="brightness" min="0" max="200" value="100">
                 </div>
-                
                 <div class="slider-container">
                     <label><span>Kontras</span> <span id="contrast-val">100%</span></label>
                     <input type="range" id="contrast" min="0" max="200" value="100">
                 </div>
-                
                 <div class="slider-container">
                     <label><span>Saturasi</span> <span id="saturate-val">100%</span></label>
                     <input type="range" id="saturate" min="0" max="200" value="100">
                 </div>
-            </div>
-
-            <div class="tool-group">
-                <h3>Filter</h3>
-                <div class="btn-group">
-                    <button class="btn" id="grayscaleBtn"><i class="fa-solid fa-droplet-slash"></i> B&W</button>
-                    <button class="btn" id="invertBtn"><i class="fa-solid fa-yin-yang"></i> Invert</button>
+                <div class="slider-container">
+                    <label><span>Blur</span> <span id="blur-val">0px</span></label>
+                    <input type="range" id="blur" min="0" max="20" value="0" step="0.5">
                 </div>
             </div>
 
-            <div style="flex: 1;"></div> <div class="tool-group">
-                <button class="btn" id="resetBtn" style="margin-bottom: 10px; width: 100%;">
-                    <i class="fa-solid fa-rotate-left"></i> Reset Perubahan
-                </button>
-                <button class="btn btn-primary" id="downloadBtn" style="width: 100%;">
-                    <i class="fa-solid fa-download"></i> Simpan Gambar
-                </button>
+            <div class="tool-group">
+                <h3>Efek Spesial</h3>
+                <div class="slider-container">
+                    <label><span>Vignette (Tepi Gelap)</span> <span id="vignette-val">0%</span></label>
+                    <input type="range" id="vignette" min="0" max="100" value="0">
+                </div>
+                <div class="slider-container">
+                    <label><span>Noise (Film Grain)</span> <span id="noise-val">0%</span></label>
+                    <input type="range" id="noise" min="0" max="100" value="0">
+                </div>
+            </div>
+            
+            <div class="tool-group">
+                <h3>Stiker / Logo</h3>
+                <label for="stickerInput" class="btn" style="width: 100%; cursor: pointer;">
+                    <i class="fa-solid fa-image"></i> Pilih Stiker
+                </label>
+                <input type="file" id="stickerInput" accept="image/png, image/jpeg, image/webp">
+                
+                <div id="stickerControls" style="display: none; margin-top: 10px;">
+                    <div class="slider-container"><label><span>Ukuran</span> <span id="st-size-val">20%</span></label><input type="range" id="stickerSize" min="5" max="100" value="20"></div>
+                    <div class="slider-container"><label><span>Posisi X</span> <span id="st-x-val">50%</span></label><input type="range" id="stickerX" min="0" max="100" value="50"></div>
+                    <div class="slider-container"><label><span>Posisi Y</span> <span id="st-y-val">50%</span></label><input type="range" id="stickerY" min="0" max="100" value="50"></div>
+                    <button class="btn btn-danger" id="removeStickerBtn" style="width: 100%;"><i class="fa-solid fa-trash"></i> Hapus Stiker</button>
+                </div>
+            </div>
+
+            <div class="tool-group">
+                <h3>Potong & Gambar</h3>
+                <label style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: -5px;">Smart Crop</label>
+                <div class="btn-grid-3">
+                    <button class="btn" id="crop11">1:1</button>
+                    <button class="btn" id="crop43">4:3</button>
+                    <button class="btn" id="crop169">16:9</button>
+                </div>
+                
+                <button class="btn" id="toggleDrawBtn" style="width: 100%; margin-top: 5px;"><i class="fa-solid fa-paintbrush"></i> Mulai Coretan</button>
+                <div class="input-group" id="brushControls" style="display: none; margin-top: 5px;">
+                    <div style="flex: 2;"><input type="range" id="brushSize" min="1" max="50" value="5"></div>
+                    <div style="flex: 1;"><input type="color" id="brushColor" value="#ff0000"></div>
+                </div>
+            </div>
+
+            <div class="tool-group">
+                <h3>Dekorasi Teks</h3>
+                <div class="input-group">
+                    <div style="flex: 2;"><label>Tebal Bingkai</label><input type="number" id="frameSize" value="0" min="0"></div>
+                    <div style="flex: 1;"><label>Warna</label><input type="color" id="frameColor" value="#ffffff"></div>
+                </div>
+                <div class="input-group">
+                    <div style="flex: 2;"><label>Watermark</label><input type="text" id="watermarkText" placeholder="Teks..."></div>
+                    <div style="flex: 1;"><label>Warna</label><input type="color" id="watermarkColor" value="#ffffff"></div>
+                </div>
+            </div>
+
+            <div class="tool-group">
+                <h3>Transformasi</h3>
+                <div class="btn-grid">
+                    <button class="btn" id="rotateLeftBtn"><i class="fa-solid fa-rotate-left"></i> Kiri</button>
+                    <button class="btn" id="rotateRightBtn"><i class="fa-solid fa-rotate-right"></i> Kanan</button>
+                    <button class="btn" id="flipHorizontalBtn"><i class="fa-solid fa-arrows-left-right"></i> Flip H</button>
+                    <button class="btn" id="flipVerticalBtn"><i class="fa-solid fa-arrows-up-down"></i> Flip V</button>
+                </div>
+            </div>
+
+            <div class="tool-group" style="border-bottom: none; margin-top: 20px;">
+                <button class="btn" id="resetBtn" style="margin-bottom: 10px;"><i class="fa-solid fa-arrow-rotate-left"></i> Reset Perubahan</button>
+                <button class="btn btn-primary" id="openExportBtn"><i class="fa-solid fa-download"></i> Simpan / Ekspor (Ctrl+S)</button>
             </div>
         </aside>
 
-        <main class="editor-area">
+        <main class="editor-area" id="editorArea">
             <div class="upload-placeholder" id="uploadPlaceholder">
                 <i class="fa-solid fa-cloud-arrow-up"></i>
-                <h2>Belum ada gambar</h2>
-                <p style="margin: 10px 0 20px;">Unggah gambar untuk mulai mengedit</p>
-                <label for="uploadInput" class="btn btn-primary" style="display: inline-block; cursor: pointer;">
-                    Pilih Gambar
-                </label>
+                <h2>Mulai Mengedit Foto</h2>
+                <p style="margin: 10px 0 25px;">Seret & lepas gambar ke sini atau klik tombol di bawah</p>
+                <label for="uploadInput" class="btn btn-primary" style="display: inline-flex; cursor: pointer; padding: 12px 30px; font-size: 1rem;"><i class="fa-solid fa-folder-open"></i> Pilih Gambar</label>
                 <input type="file" id="uploadInput" accept="image/png, image/jpeg, image/webp">
             </div>
 
-            <canvas id="canvas"></canvas>
+            <div class="canvas-container">
+                <canvas id="canvas"></canvas>
+                <canvas id="drawOverlay"></canvas>
+            </div>
+            <input type="hidden" id="resizeWidth">
+            <input type="hidden" id="resizeHeight">
         </main>
     </div>
 
-    <script>
-        // --- Version Control Comment ---
-        // Version: 1.0.0
-        // Updates: Initial release, Canvas setup, Basic filters, Dark/Light mode.
+    <div class="modal-overlay" id="exportModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-sliders"></i> Pengaturan Ekspor</h2>
+                <button class="close-modal" id="closeExportBtn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="input-group" style="margin-bottom: 15px;">
+                <div style="flex: 1;">
+                    <label>Format Gambar</label>
+                    <select id="exportFormat">
+                        <option value="image/jpeg">JPEG (.jpg) - Ukuran Kecil</option>
+                        <option value="image/png">PNG (.png) - Kualitas Tinggi</option>
+                        <option value="image/webp">WEBP (.webp) - Modern Web</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="slider-container" id="qualityContainer">
+                <label><span>Kualitas Gambar</span> <span id="quality-val">90%</span></label>
+                <input type="range" id="exportQuality" min="10" max="100" value="90">
+                <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 5px;">*Kualitas rendah akan memperkecil ukuran file.</small>
+            </div>
 
-        // --- DOM Elements ---
+            <div class="input-group" style="margin-top: 25px;">
+                <button class="btn" id="cancelExportBtn" style="flex: 1;">Batal</button>
+                <button class="btn btn-primary" id="confirmExportBtn" style="flex: 1;"><i class="fa-solid fa-check"></i> Unduh Sekarang</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Version 1.7.0: Pro UI/UX, Advanced Export, Keyboard Shortcuts
+
         const themeBtn = document.getElementById('themeBtn');
         const uploadInput = document.getElementById('uploadInput');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        const drawOverlay = document.getElementById('drawOverlay');
+        const drawCtx = drawOverlay.getContext('2d');
         const uploadPlaceholder = document.getElementById('uploadPlaceholder');
-        
-        // Sliders & Values
-        const brightnessSlider = document.getElementById('brightness');
-        const contrastSlider = document.getElementById('contrast');
-        const saturateSlider = document.getElementById('saturate');
-        const brightVal = document.getElementById('bright-val');
-        const contrastVal = document.getElementById('contrast-val');
-        const saturateVal = document.getElementById('saturate-val');
+        const editorArea = document.getElementById('editorArea');
 
-        // Buttons
-        const grayscaleBtn = document.getElementById('grayscaleBtn');
-        const invertBtn = document.getElementById('invertBtn');
-        const resetBtn = document.getElementById('resetBtn');
-        const downloadBtn = document.getElementById('downloadBtn');
+        let img = new Image(); let isInternalUpdate = false; let editHistory = []; let historyIndex = -1; const MAX_HISTORY = 10;
+        const undoBtn = document.getElementById('undoBtn'), redoBtn = document.getElementById('redoBtn');
 
-        // State variables
-        let img = new Image();
-        let currentFilters = {
-            brightness: 100,
-            contrast: 100,
-            saturate: 100,
-            grayscale: 0,
-            invert: 0
+        let currentFilters = { brightness: 100, contrast: 100, saturate: 100, blur: 0, vignette: 0, noise: 0, rotate: 0, flipH: 1, flipV: 1 };
+        let stickerImg = new Image(), stickerSettings = { hasSticker: false, sizeScale: 20, posX: 50, posY: 50 };
+
+        const stickerInput = document.getElementById('stickerInput'), stickerControls = document.getElementById('stickerControls');
+        const presetValues = {
+            normal: { brightness: 100, contrast: 100, saturate: 100, blur: 0, vignette: 0, noise: 0 },
+            vintage: { brightness: 110, contrast: 90, saturate: 60, blur: 0, vignette: 25, noise: 35 },
+            cinematic: { brightness: 90, contrast: 130, saturate: 120, blur: 0, vignette: 40, noise: 15 },
+            bw: { brightness: 100, contrast: 110, saturate: 0, blur: 0, vignette: 15, noise: 25 }
         };
 
-        // --- Theme Toggle Logic ---
+        const sliders = ['brightness', 'contrast', 'saturate', 'blur', 'vignette', 'noise'].map(id => document.getElementById(id));
+        const valSpans = ['bright-val', 'contrast-val', 'saturate-val', 'blur-val', 'vignette-val', 'noise-val'].map(id => document.getElementById(id));
+        const frameSize = document.getElementById('frameSize'), frameColor = document.getElementById('frameColor');
+        const watermarkText = document.getElementById('watermarkText'), watermarkColor = document.getElementById('watermarkColor');
+        const resizeW = document.getElementById('resizeWidth'), resizeH = document.getElementById('resizeHeight');
+
+        // Theme Toggle
         themeBtn.addEventListener('click', () => {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            
-            // Toggle Icon
-            themeBtn.innerHTML = newTheme === 'dark' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+            const current = document.documentElement.getAttribute('data-theme');
+            document.documentElement.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+            themeBtn.innerHTML = current === 'dark' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
         });
 
-        // --- Image Upload Logic ---
+        // Noise Pattern
+        const getNoisePattern = () => {
+            const noiseCanvas = document.createElement('canvas'); noiseCanvas.width = 150; noiseCanvas.height = 150;
+            const nCtx = noiseCanvas.getContext('2d'); const imgData = nCtx.createImageData(150, 150); const data = imgData.data;
+            for (let i = 0; i < data.length; i += 4) { const val = Math.random() * 255; data[i] = val; data[i+1] = val; data[i+2] = val; data[i+3] = 255; }
+            nCtx.putImageData(imgData, 0, 0); return ctx.createPattern(noiseCanvas, 'repeat');
+        };
+        const noisePattern = getNoisePattern();
+
+        // History
+        function saveState() {
+            if (historyIndex < editHistory.length - 1) editHistory = editHistory.slice(0, historyIndex + 1);
+            editHistory.push({ src: img.src, filters: { ...currentFilters }, decor: { frame: frameSize.value, wText: watermarkText.value }, sticker: { ...stickerSettings, stickerSrc: stickerSettings.hasSticker ? stickerImg.src : null } });
+            if (editHistory.length > MAX_HISTORY) editHistory.shift(); else historyIndex++;
+            updateHistoryButtons();
+        }
+        function updateHistoryButtons() { undoBtn.disabled = historyIndex <= 0; redoBtn.disabled = historyIndex >= editHistory.length - 1; }
+        function restoreState(index) {
+            const state = editHistory[index]; currentFilters = { ...state.filters };
+            frameSize.value = state.decor.frame; watermarkText.value = state.decor.wText; stickerSettings = { ...state.sticker };
+            
+            sliders[0].value = currentFilters.brightness; valSpans[0].innerText = `${currentFilters.brightness}%`;
+            sliders[1].value = currentFilters.contrast; valSpans[1].innerText = `${currentFilters.contrast}%`;
+            sliders[2].value = currentFilters.saturate; valSpans[2].innerText = `${currentFilters.saturate}%`;
+            sliders[3].value = currentFilters.blur; valSpans[3].innerText = `${currentFilters.blur}px`;
+            sliders[4].value = currentFilters.vignette; valSpans[4].innerText = `${currentFilters.vignette}%`;
+            sliders[5].value = currentFilters.noise; valSpans[5].innerText = `${currentFilters.noise}%`;
+
+            if (stickerSettings.hasSticker) {
+                document.getElementById('stickerSize').value = stickerSettings.sizeScale; document.getElementById('st-size-val').innerText = `${stickerSettings.sizeScale}%`;
+                document.getElementById('stickerX').value = stickerSettings.posX; document.getElementById('st-x-val').innerText = `${stickerSettings.posX}%`;
+                document.getElementById('stickerY').value = stickerSettings.posY; document.getElementById('st-y-val').innerText = `${stickerSettings.posY}%`;
+                stickerControls.style.display = 'block';
+                if (stickerImg.src !== state.sticker.stickerSrc) stickerImg.src = state.sticker.stickerSrc;
+            } else stickerControls.style.display = 'none';
+
+            if (img.src !== state.src) { isInternalUpdate = true; img.src = state.src; } else applyFilters();
+            updateHistoryButtons();
+        }
+        undoBtn.addEventListener('click', () => { if (historyIndex > 0) { historyIndex--; restoreState(historyIndex); } });
+        redoBtn.addEventListener('click', () => { if (historyIndex < editHistory.length - 1) { historyIndex++; restoreState(historyIndex); } });
+
+        // Inputs
         uploadInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                img.src = event.target.result;
-            };
-            reader.readAsDataURL(file);
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader(); reader.onload = (event) => { editHistory = []; historyIndex = -1; img.src = event.target.result; }; reader.readAsDataURL(file);
         });
-
         img.onload = () => {
-            // Hide placeholder, show canvas
-            uploadPlaceholder.style.display = 'none';
-            canvas.style.display = 'block';
-
-            // Set canvas dimensions to match image
-            canvas.width = img.width;
-            canvas.height = img.height;
-            
-            resetFilters();
-            applyFilters();
+            if (!isInternalUpdate) {
+                uploadPlaceholder.style.display = 'none'; canvas.style.display = 'block'; drawOverlay.style.display = 'block';
+                resizeW.value = img.width; resizeH.value = img.height; resetFilters(true, false); saveState();
+            } else { isInternalUpdate = false; resizeW.value = img.width; resizeH.value = img.height; applyFilters(); }
         };
 
-        // --- Filter Application Logic ---
+        stickerInput.addEventListener('change', (e) => {
+            const file = e.target.files[0]; if (!file) return; if (!img.src) return alert("Unggah gambar utama terlebih dahulu!");
+            const reader = new FileReader(); reader.onload = (event) => { stickerImg.src = event.target.result; }; reader.readAsDataURL(file);
+        });
+        stickerImg.onload = () => { stickerSettings.hasSticker = true; stickerControls.style.display = 'block'; applyFilters(); saveState(); };
+        document.getElementById('removeStickerBtn').addEventListener('click', () => { stickerSettings.hasSticker = false; stickerControls.style.display = 'none'; stickerInput.value = ''; applyFilters(); saveState(); });
+
+        // Core Render Engine
         function applyFilters() {
             if (!img.src) return;
+            let baseW = parseInt(resizeW.value) || img.width, baseH = parseInt(resizeH.value) || img.height;
+            const rotation = currentFilters.rotate % 360, isVertical = rotation === 90 || rotation === 270 || rotation === -90 || rotation === -270;
+            canvas.width = isVertical ? baseH : baseW; canvas.height = isVertical ? baseW : baseH; drawOverlay.width = canvas.width; drawOverlay.height = canvas.height;
 
-            // Generate CSS filter string
-            ctx.filter = `
-                brightness(${currentFilters.brightness}%) 
-                contrast(${currentFilters.contrast}%) 
-                saturate(${currentFilters.saturate}%) 
-                grayscale(${currentFilters.grayscale}%) 
-                invert(${currentFilters.invert}%)
-            `;
-            
-            // Redraw image with new filters
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        }
+            ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2); if (rotation !== 0) ctx.rotate(rotation * Math.PI / 180); ctx.scale(currentFilters.flipH, currentFilters.flipV);
+            ctx.filter = `brightness(${currentFilters.brightness}%) contrast(${currentFilters.contrast}%) saturate(${currentFilters.saturate}%) blur(${currentFilters.blur}px)`;
+            ctx.drawImage(img, -baseW / 2, -baseH / 2, baseW, baseH); ctx.restore();
 
-        // --- Slider Event Listeners ---
-        brightnessSlider.addEventListener('input', (e) => {
-            currentFilters.brightness = e.target.value;
-            brightVal.innerText = `${e.target.value}%`;
-            applyFilters();
-        });
-
-        contrastSlider.addEventListener('input', (e) => {
-            currentFilters.contrast = e.target.value;
-            contrastVal.innerText = `${e.target.value}%`;
-            applyFilters();
-        });
-
-        saturateSlider.addEventListener('input', (e) => {
-            currentFilters.saturate = e.target.value;
-            saturateVal.innerText = `${e.target.value}%`;
-            applyFilters();
-        });
-
-        // --- Button Event Listeners ---
-        grayscaleBtn.addEventListener('click', () => {
-            currentFilters.grayscale = currentFilters.grayscale === 0 ? 100 : 0;
-            applyFilters();
-        });
-
-        invertBtn.addEventListener('click', () => {
-            currentFilters.invert = currentFilters.invert === 0 ? 100 : 0;
-            applyFilters();
-        });
-
-        // --- Reset Logic ---
-        function resetFilters() {
-            currentFilters = { brightness: 100, contrast: 100, saturate: 100, grayscale: 0, invert: 0 };
-            
-            brightnessSlider.value = 100;
-            contrastSlider.value = 100;
-            saturateSlider.value = 100;
-            
-            brightVal.innerText = '100%';
-            contrastVal.innerText = '100%';
-            saturateVal.innerText = '100%';
-
-            applyFilters();
-        }
-
-        resetBtn.addEventListener('click', resetFilters);
-
-        // --- Download Logic ---
-        downloadBtn.addEventListener('click', () => {
-            if (!img.src) {
-                alert("Silakan unggah gambar terlebih dahulu!");
-                return;
+            if (stickerSettings.hasSticker && stickerImg.complete) {
+                const targetW = canvas.width * (stickerSettings.sizeScale / 100), targetH = targetW * (stickerImg.height / stickerImg.width);
+                const targetX = (canvas.width - targetW) * (stickerSettings.posX / 100), targetY = (canvas.height - targetH) * (stickerSettings.posY / 100);
+                ctx.drawImage(stickerImg, targetX, targetY, targetW, targetH);
             }
-            const link = document.createElement('a');
-            link.download = `edited-image-${Date.now()}.png`;
-            link.href = canvas.toDataURL('image/png');
+            if (currentFilters.vignette > 0) {
+                const radius = Math.max(canvas.width, canvas.height) / 2;
+                const gradient = ctx.createRadialGradient(canvas.width/2, canvas.height/2, radius * (1 - (currentFilters.vignette/100) * 0.8), canvas.width/2, canvas.height/2, radius * 1.2);
+                gradient.addColorStop(0, 'rgba(0,0,0,0)'); gradient.addColorStop(1, `rgba(0,0,0,${currentFilters.vignette / 100})`);
+                ctx.fillStyle = gradient; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            if (currentFilters.noise > 0) { ctx.save(); ctx.globalAlpha = (currentFilters.noise / 100) * 0.3; ctx.fillStyle = noisePattern; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.restore(); }
+            
+            const fSize = parseInt(frameSize.value); if (fSize > 0) { ctx.lineWidth = fSize * 2; ctx.strokeStyle = frameColor.value; ctx.strokeRect(0, 0, canvas.width, canvas.height); }
+            if (watermarkText.value.trim() !== '') {
+                const fontSize = Math.max(20, Math.floor(canvas.width * 0.04));
+                ctx.font = `bold ${fontSize}px Arial`; ctx.fillStyle = watermarkColor.value; ctx.textAlign = "right"; ctx.textBaseline = "bottom";
+                ctx.shadowColor = "rgba(0,0,0,0.7)"; ctx.shadowBlur = 5; ctx.fillText(watermarkText.value, canvas.width - (fontSize/2), canvas.height - (fontSize/2)); ctx.shadowBlur = 0;
+            }
+        }
+
+        const updateStickerSlider = (id, key, labelId) => {
+            const slider = document.getElementById(id);
+            slider.addEventListener('input', (e) => { stickerSettings[key] = parseInt(e.target.value); document.getElementById(labelId).innerText = `${e.target.value}%`; applyFilters(); });
+            slider.addEventListener('change', saveState);
+        };
+        updateStickerSlider('stickerSize', 'sizeScale', 'st-size-val'); updateStickerSlider('stickerX', 'posX', 'st-x-val'); updateStickerSlider('stickerY', 'posY', 'st-y-val');
+
+        [frameSize, watermarkText].forEach(el => el.addEventListener('change', () => { applyFilters(); saveState(); }));
+        [frameColor, watermarkColor].forEach(el => el.addEventListener('input', applyFilters));
+        document.getElementById('rotateLeftBtn').addEventListener('click', () => { currentFilters.rotate -= 90; applyFilters(); saveState(); });
+        document.getElementById('rotateRightBtn').addEventListener('click', () => { currentFilters.rotate += 90; applyFilters(); saveState(); });
+        document.getElementById('flipHorizontalBtn').addEventListener('click', () => { currentFilters.flipH *= -1; applyFilters(); saveState(); });
+        document.getElementById('flipVerticalBtn').addEventListener('click', () => { currentFilters.flipV *= -1; applyFilters(); saveState(); });
+
+        const updateSliderVal = (idx, key, e, unit) => { currentFilters[key] = e.target.value; valSpans[idx].innerText = `${e.target.value}${unit}`; applyFilters(); };
+        sliders[0].addEventListener('input', (e) => updateSliderVal(0, 'brightness', e, '%')); sliders[1].addEventListener('input', (e) => updateSliderVal(1, 'contrast', e, '%'));
+        sliders[2].addEventListener('input', (e) => updateSliderVal(2, 'saturate', e, '%')); sliders[3].addEventListener('input', (e) => updateSliderVal(3, 'blur', e, 'px'));
+        sliders[4].addEventListener('input', (e) => updateSliderVal(4, 'vignette', e, '%')); sliders[5].addEventListener('input', (e) => updateSliderVal(5, 'noise', e, '%'));
+        sliders.forEach(slider => slider.addEventListener('change', saveState));
+
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const conf = presetValues[e.target.getAttribute('data-preset')];
+                currentFilters.brightness = conf.brightness; sliders[0].value = conf.brightness; valSpans[0].innerText = `${conf.brightness}%`;
+                currentFilters.contrast = conf.contrast;     sliders[1].value = conf.contrast;     valSpans[1].innerText = `${conf.contrast}%`;
+                currentFilters.saturate = conf.saturate;     sliders[2].value = conf.saturate;     valSpans[2].innerText = `${conf.saturate}%`;
+                currentFilters.blur = conf.blur;             sliders[3].value = conf.blur;         valSpans[3].innerText = `${conf.blur}px`;
+                currentFilters.vignette = conf.vignette;     sliders[4].value = conf.vignette;     valSpans[4].innerText = `${conf.vignette}%`;
+                currentFilters.noise = conf.noise;           sliders[5].value = conf.noise;        valSpans[5].innerText = `${conf.noise}%`;
+                applyFilters(); saveState();
+            });
+        });
+
+        // Smart Crop & Draw
+        function applySmartCrop(targetRatio) {
+            if (!img.src) return;
+            const tempImg = new Image();
+            tempImg.onload = () => {
+                const tempCanvas = document.createElement('canvas'); const tCtx = tempCanvas.getContext('2d');
+                let sW = tempImg.width, sH = tempImg.height, cW = sW, cH = sH, dX = 0, dY = 0;
+                if (sW / sH > targetRatio) { cW = sH * targetRatio; dX = (sW - cW) / 2; } else { cH = sW / targetRatio; dY = (sH - cH) / 2; }
+                tempCanvas.width = cW; tempCanvas.height = cH; tCtx.drawImage(tempImg, dX, dY, cW, cH, 0, 0, cW, cH);
+                resetFilters(false, false); isInternalUpdate = true; img.src = tempCanvas.toDataURL('image/png'); setTimeout(saveState, 50);
+            };
+            tempImg.src = canvas.toDataURL('image/png');
+        }
+        document.getElementById('crop11').addEventListener('click', () => applySmartCrop(1)); document.getElementById('crop43').addEventListener('click', () => applySmartCrop(4/3)); document.getElementById('crop169').addEventListener('click', () => applySmartCrop(16/9));
+
+        const toggleDrawBtn = document.getElementById('toggleDrawBtn'), brushControls = document.getElementById('brushControls');
+        let isDrawingMode = false, isDrawing = false, lastX = 0, lastY = 0;
+        toggleDrawBtn.addEventListener('click', () => {
+            if (!img.src) return alert("Unggah gambar terlebih dahulu!");
+            isDrawingMode = !isDrawingMode;
+            if (isDrawingMode) {
+                toggleDrawBtn.innerHTML = '<i class="fa-solid fa-check"></i> Selesai Coretan'; toggleDrawBtn.classList.add('active'); brushControls.style.display = 'flex'; editorArea.classList.add('drawing-mode');
+            } else {
+                toggleDrawBtn.innerHTML = '<i class="fa-solid fa-paintbrush"></i> Mulai Coretan'; toggleDrawBtn.classList.remove('active'); brushControls.style.display = 'none'; editorArea.classList.remove('drawing-mode');
+                const tempCanvas = document.createElement('canvas'); tempCanvas.width = canvas.width; tempCanvas.height = canvas.height; const tCtx = tempCanvas.getContext('2d');
+                tCtx.drawImage(canvas, 0, 0); tCtx.drawImage(drawOverlay, 0, 0);
+                resetFilters(false, false); isInternalUpdate = true; img.src = tempCanvas.toDataURL('image/png'); drawCtx.clearRect(0, 0, drawOverlay.width, drawOverlay.height); setTimeout(saveState, 50);
+            }
+        });
+
+        const getMousePos = (e) => { const rect = drawOverlay.getBoundingClientRect(), scaleX = drawOverlay.width / rect.width, scaleY = drawOverlay.height / rect.height; return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY }; };
+        drawOverlay.addEventListener('mousedown', (e) => { if (!isDrawingMode) return; isDrawing = true; const pos = getMousePos(e); lastX = pos.x; lastY = pos.y; });
+        drawOverlay.addEventListener('mousemove', (e) => {
+            if (!isDrawing || !isDrawingMode) return; const pos = getMousePos(e);
+            drawCtx.beginPath(); drawCtx.lineCap = 'round'; drawCtx.lineJoin = 'round'; drawCtx.lineWidth = document.getElementById('brushSize').value; drawCtx.strokeStyle = document.getElementById('brushColor').value;
+            drawCtx.moveTo(lastX, lastY); drawCtx.lineTo(pos.x, pos.y); drawCtx.stroke(); lastX = pos.x; lastY = pos.y;
+        });
+        drawOverlay.addEventListener('mouseup', () => isDrawing = false); drawOverlay.addEventListener('mouseout', () => isDrawing = false);
+
+        function resetFilters(fullReset = true, doSave = true) {
+            currentFilters = { brightness: 100, contrast: 100, saturate: 100, blur: 0, vignette: 0, noise: 0, rotate: 0, flipH: 1, flipV: 1 };
+            sliders.forEach(s => s.value = s.id==='blur'||s.id==='vignette'||s.id==='noise' ? 0 : 100);
+            valSpans.forEach((v, i) => v.innerText = sliders[i].value + (i===3?'px':'%'));
+            if (fullReset) { frameSize.value = 0; watermarkText.value = ''; stickerSettings = { hasSticker: false, sizeScale: 20, posX: 50, posY: 50 }; stickerControls.style.display = 'none'; stickerInput.value = ''; }
+            applyFilters(); if (doSave && img.src) saveState();
+        }
+        document.getElementById('resetBtn').addEventListener('click', () => resetFilters(true, true));
+
+        // NEW: Advanced Export Logic
+        const exportModal = document.getElementById('exportModal');
+        const exportFormat = document.getElementById('exportFormat');
+        const exportQuality = document.getElementById('exportQuality');
+        const qualityContainer = document.getElementById('qualityContainer');
+        const qualityVal = document.getElementById('quality-val');
+
+        document.getElementById('openExportBtn').addEventListener('click', () => {
+            if (!img.src) return alert("Silakan unggah gambar terlebih dahulu!");
+            if (isDrawingMode) toggleDrawBtn.click();
+            exportModal.classList.add('active');
+        });
+
+        document.getElementById('closeExportBtn').addEventListener('click', () => exportModal.classList.remove('active'));
+        document.getElementById('cancelExportBtn').addEventListener('click', () => exportModal.classList.remove('active'));
+
+        exportFormat.addEventListener('change', (e) => {
+            // Hide quality slider for PNG as it's lossless
+            qualityContainer.style.display = e.target.value === 'image/png' ? 'none' : 'block';
+        });
+
+        exportQuality.addEventListener('input', (e) => {
+            qualityVal.innerText = `${e.target.value}%`;
+        });
+
+        document.getElementById('confirmExportBtn').addEventListener('click', () => {
+            const format = exportFormat.value;
+            const quality = parseInt(exportQuality.value) / 100;
+            const ext = format.split('/')[1];
+            
+            const link = document.createElement('a'); 
+            link.download = `meditor-pro-${Date.now()}.${ext}`; 
+            link.href = canvas.toDataURL(format, quality); 
             link.click();
+            exportModal.classList.remove('active');
+        });
+
+        // NEW: Keyboard Shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'z') { e.preventDefault(); if(!undoBtn.disabled) undoBtn.click(); }
+            if (e.ctrlKey && e.key === 'y') { e.preventDefault(); if(!redoBtn.disabled) redoBtn.click(); }
+            if (e.ctrlKey && e.key === 's') { e.preventDefault(); document.getElementById('openExportBtn').click(); }
         });
     </script>
 </body>
